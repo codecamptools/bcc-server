@@ -10,13 +10,18 @@ export class ValuesController extends BaseController {
       .Router()
       //NOTE  each route gets registered as a .get, .post, .put, or .delete, the first parameter of each method is a string to be concatinated onto the base url registered with the route in the super call. The second parameter is the method that will be run when this route is hit.
       .get("", this.getAll)
-      .use("/:id", AuthorizationService.IsAuthorized)
+      .use(
+        "/:id",
+        AuthorizationService.IsAuthorized,
+        AuthorizationService.hasPermission("read:roles"),
+        AuthorizationService.getUserProfile,
+      )
       .get("/:id", this.getById);
   }
 
   async getAll(_, res, next) {
     try {
-      valuesService.find({})
+      valuesService.find({});
       return res.send(["value1", "value1"]);
     } catch (error) {
       next(error);
@@ -24,7 +29,11 @@ export class ValuesController extends BaseController {
   }
   async getById(req, res, next) {
     try {
-      return res.send("value" + req.params.id);
+      return res.send({
+        value: "value" + req.params.id,
+        user: req.user,
+        userInfo: req.userInfo
+      });
     } catch (error) {
       next(error);
     }
