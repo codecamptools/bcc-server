@@ -1,21 +1,15 @@
 import express from "express";
 import BaseController from "../utils/BaseController";
-import { AuthorizationService } from "../services/AuthorizationService";
 import { valuesService } from "../services/ValueService";
+import auth0Provider from "@bcwdev/auth0Provider";
 
 export class ValuesController extends BaseController {
   constructor() {
     super("api/values");
     this.router = express
       .Router()
-      //NOTE  each route gets registered as a .get, .post, .put, or .delete, the first parameter of each method is a string to be concatinated onto the base url registered with the route in the super call. The second parameter is the method that will be run when this route is hit.
       .get("", this.getAll)
-      .use(
-        "/:id",
-        AuthorizationService.IsAuthorized,
-        AuthorizationService.hasPermission("read:roles"),
-        AuthorizationService.getUserProfile,
-      )
+      .use("/:id", auth0Provider.isAuthorized)
       .get("/:id", this.getById);
   }
 

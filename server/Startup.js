@@ -1,9 +1,9 @@
 import bp from "body-parser";
 import cors from "cors";
 import express from "express";
-import cp from "cookie-parser";
 import helmet from "helmet";
 import { RegisterControllers, Paths } from "../Setup";
+import auth0Provider from "@bcwdev/auth0Provider";
 
 export default class Startup {
   static ConfigureGlobalMiddleware(app) {
@@ -18,12 +18,16 @@ export default class Startup {
     };
     app.use(helmet());
     app.use(cors(corsOptions));
-    app.use(cp());
     app.use(bp.json({ limit: "50mb" }));
+    auth0Provider.configure({
+      domain: process.env.AUTH_DOMAIN,
+      clientId: process.env.AUTH_CLIENT_ID,
+      audience: process.env.AUTH_AUDIENCE
+    });
   }
-  static async ConfigureRoutes(app) {
+  static ConfigureRoutes(app) {
     let router = express.Router();
-    await RegisterControllers(router);
+    RegisterControllers(router);
     app.use(router);
 
     app.use("", express.static(Paths.Public));
