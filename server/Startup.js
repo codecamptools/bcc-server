@@ -19,6 +19,7 @@ export default class Startup {
     app.use(helmet());
     app.use(cors(corsOptions));
     app.use(bp.json({ limit: "50mb" }));
+    // NOTE Configures auth0 middleware that is used throughout controllers
     auth0Provider.configure({
       domain: process.env.AUTH_DOMAIN,
       clientId: process.env.AUTH_CLIENT_ID,

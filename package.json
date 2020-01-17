@@ -12,7 +12,7 @@
   "author": "Boise Codeworks",
   "license": "ISC",
   "dependencies": {
-    "@bcwdev/auth0provider": "0.0.1",
+    "@bcwdev/auth0provider": "0.0.5",
     "azure-storage": "^2.10.3",
     "cors": "^2.8.1",
     "dotenv": "^8.1.0",
