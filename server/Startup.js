@@ -48,13 +48,13 @@ export default class Startup {
     //NOTE Default Error Handler
     app.use((error, req, res, next) => {
       if (error.status == 500 || !error.status) {
-        error.message = console.error(error); // should write to external
+        console.error(error); // should write to external
       }
       error = error || {
         status: 400,
         message: "An unexpected error occured please try again later"
       };
-      res.status(error.status).send({ ...error, url: req.url });
+      res.status(error.status || 400).send({ ...error, url: req.url });
     });
   }
 }

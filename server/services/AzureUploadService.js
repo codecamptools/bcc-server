@@ -1,3 +1,4 @@
+import crypto from "crypto";
 import azure from "azure-storage";
 import { BadRequest } from "../Utils/Errors";
 
@@ -14,7 +15,7 @@ class MemCache {
 }
 
 /**
- * @typedef {{ name: string, key: string, containers: string[] }} AzureStorageConfig
+ * @typedef {{ name: string, key: string, containers?: string[], tables?: string[] }} AzureStorageConfig
  * @typedef {{ name: string, base64: string }} Base64File
  */
 
@@ -23,15 +24,92 @@ export class AzureStorageService {
    * Creates a promise based wrapper around common AzureStorage methods
    * @param {AzureStorageConfig} config
    */
-  constructor({ name, key, containers = [] }) {
+  constructor({ name, key, containers = [], tables = [] }) {
     if (!name || !key) {
       throw new Error("[AZURE_STORAGE_ERROR] Invalid Config");
     }
     this.name = name;
     this.storageAccount = azure.createBlobService(this.name, key);
+    this.tableStorage = azure.createTableService(this.name, key);
     this.containers = containers;
+    this.tables = tables;
     this._memCache = {};
     this.containers.forEach(this.__checkContainer);
+    this.tables.forEach(this.__checkTable);
+  }
+
+  /**
+   * Inserts an entity into a table, if the table doesn't exits it is created
+   * @param {string} table
+   * @param {*} entity
+   */
+  async InsertEntity(table, entity) {
+    await this.__checkTable(table);
+    return new Promise(async (resolve, reject) => {
+      this.tableStorage.insertEntity(
+        table,
+        entity,
+        { echoContent: true, autoResolveProperties: true },
+        (err, response, result) => {
+          if (err) {
+            return reject(err);
+          }
+          return resolve({ entity, result });
+        }
+      );
+    });
+  }
+  /**
+   * Inserts or updates an entity in a table, if the table doesn't exits it is created
+   * @param {string} table
+   * @param {*} entity
+   */
+  async UpdateEntity(table, entity) {
+    return new Promise(async (resolve, reject) => {
+      try {
+        await this.__checkTable(table);
+        this.tableStorage.insertOrReplaceEntity(
+          table,
+          entity,
+          (err, response, result) => {
+            if (err) {
+              throw err;
+            }
+            resolve({ entity, result });
+          }
+        );
+      } catch (e) {
+        reject(e);
+      }
+    });
+  }
+  /**
+   * removes an entity from a table
+   * @param {string} table
+   * @param {*} entity
+   */
+  async deleteEntity(table, entity) {
+    return new Promise(async (resolve, reject) => {
+      try {
+        this.tableStorage.doesTableExist(table, err => {
+          if (err) {
+            throw err;
+          }
+          this.tableStorage.deleteEntity(
+            table,
+            entity,
+            (err, response, result) => {
+              if (err) {
+                throw err;
+              }
+              resolve({ entity, result });
+            }
+          );
+        });
+      } catch (e) {
+        reject(e);
+      }
+    });
   }
 
   /**
@@ -232,5 +310,30 @@ export class AzureStorageService {
         resolve();
       });
     });
+  }
+  __checkTable(table) {
+    return new Promise((resolve, reject) => {
+      this.tableStorage.createTableIfNotExists(table, err => {
+        if (err) {
+          return reject(err);
+        }
+        resolve();
+      });
+    });
+  }
+}
+function generateKey() {
+  return crypto.randomBytes(16).toString("hex");
+}
+var entGen = azure.TableUtilities.entityGenerator;
+
+export class StorageEntity {
+  constructor(data, partitionKey = "general", rowKey = generateKey()) {
+    this.PartitionKey = entGen.String(partitionKey.split("/").join(""));
+    this.RowKey = entGen.String(rowKey);
+    this.Data = entGen.String(JSON.stringify(data));
+    // Object.keys(data).forEach(k => {
+    //   this[k] = entGen.String(data[k])
+    // })
   }
 }
