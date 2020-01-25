@@ -38,6 +38,62 @@ export class AzureStorageService {
     this.tables.forEach(this.__checkTable);
   }
 
+  async GetEntities(
+    table,
+    { where = "", select = "", top = 0, and = "", or = "" },
+    continuationToken = null
+  ) {
+    await this.__checkTable(table);
+    return new Promise(async (resolve, reject) => {
+      let tableQuery = new azure.TableQuery();
+      if (where) {
+        tableQuery.where(where);
+      }
+      if (select) {
+        tableQuery.select(select);
+      }
+      if (top) {
+        tableQuery.top(top);
+      }
+      if (and) {
+        tableQuery.and(and);
+      }
+      if (or) {
+        tableQuery.or(or);
+      }
+
+      this.tableStorage.queryEntities(
+        table,
+        tableQuery,
+        continuationToken,
+        { autoResolveProperties: true },
+        (err, result, response) => {
+          if (err) {
+            return reject(err);
+          }
+          resolve({ result, response });
+        }
+      );
+    });
+  }
+  async GetEntity(table, partitionKey, rowKey) {
+    await this.__checkTable(table);
+    return new Promise(async (resolve, reject) => {
+      this.tableStorage.retrieveEntity(
+        table,
+        partitionKey,
+        rowKey,
+        { autoResolveProperties: true },
+        (err, result, response) => {
+          if (err) {
+            return reject(err);
+          }
+          resolve({ result, response });
+        }
+      );
+    });
+  }
+
   /**
    * Inserts an entity into a table, if the table doesn't exits it is created
    * @param {string} table
@@ -46,10 +102,9 @@ export class AzureStorageService {
   async InsertEntity(table, entity) {
     await this.__checkTable(table);
     return new Promise(async (resolve, reject) => {
-      this.tableStorage.insertEntity(
+      this.tableStorage.insertOrReplaceEntity(
         table,
         entity,
-        { echoContent: true, autoResolveProperties: true },
         (err, response, result) => {
           if (err) {
             return reject(err);
@@ -320,20 +375,5 @@ export class AzureStorageService {
         resolve();
       });
     });
-  }
-}
-function generateKey() {
-  return crypto.randomBytes(16).toString("hex");
-}
-var entGen = azure.TableUtilities.entityGenerator;
-
-export class StorageEntity {
-  constructor(data, partitionKey = "general", rowKey = generateKey()) {
-    this.PartitionKey = entGen.String(partitionKey.split("/").join(""));
-    this.RowKey = entGen.String(rowKey);
-    this.Data = entGen.String(JSON.stringify(data));
-    // Object.keys(data).forEach(k => {
-    //   this[k] = entGen.String(data[k])
-    // })
   }
 }

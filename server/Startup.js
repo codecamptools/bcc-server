@@ -47,14 +47,21 @@ export default class Startup {
     );
     //NOTE Default Error Handler
     app.use((error, req, res, next) => {
-      if (error.status == 500 || !error.status) {
+      if (error.status == 500) {
         console.error(error); // should write to external
       }
-      error = error || {
-        status: 400,
-        message: "An unexpected error occured please try again later"
-      };
-      res.status(error.status || 400).send({ ...error, url: req.url });
+      if (error.statusCode) {
+        error.status = error.statusCode;
+      }
+      if (!error.status) {
+        error.status = 400;
+      }
+      if (!error.message) {
+        error.message = "An unexpected error occured please try again later";
+      }
+      res
+        .status(error.status)
+        .send({ ...error, message: error.message, url: req.url });
     });
   }
 }

@@ -1,7 +1,6 @@
 import express from "express";
 import BaseController from "../utils/BaseController";
 import auth0Provider from "@bcwdev/auth0Provider";
-import { AZURE_STORAGE } from "../../AppServices";
 
 export class EventsController extends BaseController {
   constructor() {
@@ -35,8 +34,8 @@ export class EventsController extends BaseController {
   async createEvent(req, res, next) {
     try {
       
-      let result = await AZURE_STORAGE.InsertEntity("events", req.body);
-      res.send(result);
+      // let result = await AZURE_STORAGE.InsertEntity("events", req.body);
+      // res.send(result);
     } catch (e) {
       next(e);
     }
