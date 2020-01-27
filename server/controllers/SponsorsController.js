@@ -1,7 +1,7 @@
 import express from "express";
 import BaseController from "../utils/BaseController";
 import auth0Provider from "@bcwdev/auth0Provider";
-import { PAYPAL, AZURE_DATA_STORE } from "../../AppServices";
+import { PAYPAL, AZURE_DATA_STORE, AZURE_STORAGE } from "../../AppServices";
 
 export class SponsorsController extends BaseController {
   constructor() {
@@ -9,10 +9,13 @@ export class SponsorsController extends BaseController {
     this.router = express
       .Router()
       .get("", this.getSponsors)
-      .post("", this.createSponsor)
-      .delete("/:id", this.deleteSponsor)
       .get("/:id", this.getSponsor)
-      .post("/validate-purchase/:orderId", this.createSponsorFromPurchase);
+      .post("/validate-purchase/:orderId", this.createSponsorFromPurchase)
+      .use("", auth0Provider.hasPermissions("edit:sponsors"))
+      .post("", this.createSponsor)
+      .put("/:id", this.createSponsor)
+      .put("/:id/logo", this.setSponsorLogo)
+      .delete("/:id", this.deleteSponsor);
   }
 
   async getSponsors(req, res, next) {
@@ -36,23 +39,26 @@ export class SponsorsController extends BaseController {
     let order;
     try {
       order = await PAYPAL.GetValidPurchase(req.params.orderId);
-      console.log("order found", order);
     } catch (e) {
       return next(e);
     }
     try {
-      let key = await uploadSponsorLogo(req);
-
-      // let sponsorEntity = new AzureStorageEntity(req.body, key, req.params.orderId);
-
-      // let sponsor = await AZURE_STORAGE.InsertEntity("sponsors", sponsorEntity);
+      req.body.sponsor.logo = await uploadSponsorLogo(req);
+      let sponsor = await AZURE_DATA_STORE.Sponsors.CreateOrUpdate(
+        req.body.sponor
+      );
+      order.sponsorId = sponsor.id;
+      let payment = await AZURE_DATA_STORE.Payments.CreateOrUpdate(order);
 
       res.send({
-        message: `Thank you for sponsoring ${key.replace("/", " ")}`
+        message: `Thank you for sponsoring Boise Code Camp!`,
+        confirmation: payment.orderID,
+        sponsor
       });
     } catch (e) {
       res.send({
-        message: `Thank you for sponsoring! Your transaction was approved however something went wrong while confirming your account information. Don't worry we will be in touch soon to resolve this issue`,
+        message: `Thank you for sponsoring Boise Code Camp!`,
+        confirmation: order.orderID,
         error: e.message
       });
     }
@@ -76,21 +82,32 @@ export class SponsorsController extends BaseController {
       next(error);
     }
   }
+  async setSponsorLogo(req, res, next) {
+    try {
+      let sponsor = await AZURE_DATA_STORE.Sponsors.findById(req.params.id);
+      sponsor.logo = await uploadSponsorLogo(req);
+      await AZURE_DATA_STORE.Sponsors.CreateOrUpdate(sponsor);
+      res.send(sponsor);
+    } catch (e) {
+      next(e);
+    }
+  }
 }
+
 async function uploadSponsorLogo(req) {
-  // try {
-  //   let key = `${req.body.eventDetails.name}/${req.body.eventDetails.year}`;
-  //   if (req.body.logo64) {
-  //     let sponsorLogo = await AZURE_STORAGE.WriteBase64FileToContainerAsync(
-  //       "sponsors",
-  //       key,
-  //       { name: req.body.companyDetails.name, base64: req.body.logo64 }
-  //     );
-  //     req.body.companyDetails.logo = sponsorLogo;
-  //     delete req.body.logo64;
-  //   }
-  //   return key;
-  // } catch (e) {
-  //   throw e;
-  // }
+  try {
+    let key = `${req.body.sponsor.year}/${req.body.sponsor.name}`;
+    if (req.body.logo64) {
+      let sponsorLogo = await AZURE_STORAGE.WriteBase64FileToContainerAsync(
+        "sponsors",
+        key,
+        { name: req.body.sponsor.name, base64: req.body.logo64 }
+      );
+      delete req.body.logo64;
+      return sponsorLogo;
+    }
+    return key;
+  } catch (e) {
+    throw e;
+  }
 }

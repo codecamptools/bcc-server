@@ -6,13 +6,12 @@ export class Sponsor extends AzureStorageModel {
     name: "",
     email: ""
   };
-  company = {
-    url: "",
-    name: "",
-    logo: "",
-    sponsorDetails: { level: "", ppUpgrade: "" }
-  };
-  eventDetails = { name: "", year: 2020 };
+  url = "";
+  logo = "";
+  name = "";
+  level = "";
+  ppUpgrade = "";
+  year = 2020;
 
   validate() {
     if (!this.contact.name || !this.contact.email) {

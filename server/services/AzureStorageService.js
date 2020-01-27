@@ -50,6 +50,7 @@ export class AzureStorageService {
         tableQuery.where(where);
       }
       if (select) {
+        select = "Data,PartitionKey,RowKey,Id," + select;
         tableQuery.select(select);
       }
       if (top) {
@@ -249,6 +250,7 @@ export class AzureStorageService {
   /**
    * @param {string} container
    * @param {Base64File} file
+   * @returns {Promise<string>} BlobUrl
    */
   async WriteBase64FileToContainerAsync(container, path = "", file) {
     await this.__checkContainer(container);
