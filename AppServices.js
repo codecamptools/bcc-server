@@ -3,9 +3,9 @@ import { PaypalService } from "./server/services/PaypalService";
 import { AzureTableDataStore } from "./server/services/AzureTableDataStore";
 
 export const PAYPAL = new PaypalService(
-  process.env.PAYPAL_CLIENT_SANDBOX,
-  process.env.PAYPAL_SECRET_SANDBOX,
-  true
+  process.env.PAYPAL_CLIENT,
+  process.env.PAYPAL_SECRET,
+  process.env.PAYPAL_ENV == 'sandbox'
 );
 
 export const AZURE_STORAGE = new AzureStorageService({
