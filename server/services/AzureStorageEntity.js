@@ -157,6 +157,7 @@ export class AzureStorageSet {
   }
   ___mapDataToModel(entityData) {
     let model = new this.___Model();
+    model.id = model.id || entityData.id;
     Object.keys(model).forEach(key => {
       model[key] = entityData[key] || model[key];
     });
