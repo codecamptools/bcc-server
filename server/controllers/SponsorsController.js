@@ -43,7 +43,7 @@ export class SponsorsController extends BaseController {
       return next(e);
     }
     try {
-      req.body.sponsor.logo = await uploadSponsorLogo(req);
+      req.body.sponsor.logo = await uploadSponsorLogo(req.body.sponsor, req.body.logo64);
       let sponsor = await AZURE_DATA_STORE.Sponsors.CreateOrUpdate(
         req.body.sponor
       );
@@ -85,7 +85,7 @@ export class SponsorsController extends BaseController {
   async setSponsorLogo(req, res, next) {
     try {
       let sponsor = await AZURE_DATA_STORE.Sponsors.findById(req.params.id);
-      sponsor.logo = await uploadSponsorLogo(req);
+      sponsor.logo = await uploadSponsorLogo(sponsor, req.body.logo64);
       await AZURE_DATA_STORE.Sponsors.CreateOrUpdate(sponsor);
       res.send(sponsor);
     } catch (e) {
@@ -94,19 +94,19 @@ export class SponsorsController extends BaseController {
   }
 }
 
-async function uploadSponsorLogo(req) {
+async function uploadSponsorLogo(sponsor, logo64) {
   try {
-    let key = `${req.body.sponsor.year}/${req.body.sponsor.name}`;
-    if (req.body.logo64) {
+    let key = `${sponsor.year}/${sponsor.name}`;
+    if (logo64) {
       let sponsorLogo = await AZURE_STORAGE.WriteBase64FileToContainerAsync(
         "sponsors",
         key,
-        { name: req.body.sponsor.name, base64: req.body.logo64 }
+        { name: sponsor.name, base64: logo64 }
       );
-      delete req.body.logo64;
+      
       return sponsorLogo;
     }
-    return key;
+    return null;
   } catch (e) {
     throw e;
   }
