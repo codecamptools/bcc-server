@@ -8,7 +8,7 @@ import auth0Provider from "@bcwdev/auth0Provider";
 export default class Startup {
   static ConfigureGlobalMiddleware(app) {
     //Configure and Register Middleware (cors, body-parser)
-    var whitelist = ["http://localhost:8080"];
+    var whitelist = ["http://localhost:8080", "https://localhost:8080"];
     var corsOptions = {
       origin: function(origin, callback) {
         var originIsWhitelisted = whitelist.indexOf(origin) !== -1;
