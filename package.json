@@ -14,7 +14,7 @@
   "dependencies": {
     "@bcwdev/auth0provider": "0.0.6",
     "@paypal/checkout-server-sdk": "^1.0.2",
-    "axios": "^0.19.2",
+    "axios": "^0.21.1",
     "azure-storage": "^2.10.3",
     "cors": "^2.8.1",
     "dotenv": "^8.1.0",
