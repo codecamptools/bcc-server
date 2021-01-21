@@ -23,7 +23,7 @@
     "helmet": "^3.21.2",
     "mongoose": "^5.8.0",
     "node-cache": "^5.1.0",
-    "socket.io": "^2.3.0"
+    "socket.io": "^2.4.0"
   },
   "engines": {
     "node": "^12.0.0",
